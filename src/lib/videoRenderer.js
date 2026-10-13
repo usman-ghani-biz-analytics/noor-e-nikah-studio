@@ -13,8 +13,17 @@ export const TOTAL_FRAMES = VIDEO_DURATION * VIDEO_FPS;
 
 /* ── easing helpers ── */
 const easeOutCubic = (t) => 1 - Math.pow(1 - t, 3);
+const easeInOutCubic = (t) => (t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2);
 const clamp01 = (v) => Math.max(0, Math.min(1, v));
 const progress = (t, start, end) => clamp01((t - start) / (end - start));
+
+/* Scene visibility window: fade in during [inS,inE], hold, fade out during [outS,outE].
+   Returns 0 before inS and after outE so old scenes clear away. */
+const sceneVis = (t, inS, inE, outS, outE) => {
+  const fin = easeOutCubic(progress(t, inS, inE));
+  const fout = 1 - easeInOutCubic(progress(t, outS, outE));
+  return fin * fout;
+};
 
 function hexToRgba(hex, alpha) {
   const h = hex.replace("#", "");
@@ -1346,7 +1355,8 @@ function drawVideoFrameTemplate3(ctx, t, data, theme) {
 
   /* ═══ SCENE 1 (0–5s): Islamic greeting ═══ */
   const [gAr, gEn] = greetingPair(data);
-  const g1 = progress(t, 1.2, 2.6);
+  const s1v = sceneVis(t, 1.2, 2.6, 4.4, 5.4);
+  const g1 = s1v;
   if (g1 > 0) {
     drawCardFrame(ctx, W * 0.07, H * 0.3, W * 0.86, H * 0.14, g1, gold, 22);
     drawText(ctx, gAr, cx, H * 0.345, '52px "Amiri", serif', hexToRgba(gold, 0.95), g1, 1);
@@ -1358,12 +1368,12 @@ function drawVideoFrameTemplate3(ctx, t, data, theme) {
         H * 0.395,
         '400 26px "Cormorant Garamond", serif',
         hexToRgba(textC, 0.8),
-        progress(t, 1.8, 3.0),
+        sceneVis(t, 1.8, 3.0, 4.4, 5.4),
         2
       );
     }
   }
-  drawFlourish(ctx, cx, H * 0.465, 260, progress(t, 2.6, 3.6), gold);
+  drawFlourish(ctx, cx, H * 0.465, 260, sceneVis(t, 2.6, 3.6, 4.4, 5.4), gold);
 
   /* ═══ SCENE 2 (5–15s): Bismillah + invitation ═══ */
   drawText(
@@ -1373,9 +1383,9 @@ function drawVideoFrameTemplate3(ctx, t, data, theme) {
     H * 0.52,
     '56px "Amiri", serif',
     hexToRgba(gold, 0.9),
-    progress(t, 5.5, 6.8)
+    sceneVis(t, 5.5, 6.8, 14.3, 15.3)
   );
-  drawCardFrame(ctx, W * 0.08, H * 0.56, W * 0.84, H * 0.1, progress(t, 6.0, 7.2), gold, 20);
+  drawCardFrame(ctx, W * 0.08, H * 0.56, W * 0.84, H * 0.1, sceneVis(t, 6.0, 7.2, 14.3, 15.3), gold, 20);
   drawText(
     ctx,
     "With the blessings of Allah SWT, we joyfully invite you",
@@ -1383,7 +1393,7 @@ function drawVideoFrameTemplate3(ctx, t, data, theme) {
     H * 0.585,
     '400 30px "Cormorant Garamond", serif',
     hexToRgba(textC, 0.85),
-    progress(t, 6.3, 7.3)
+    sceneVis(t, 6.3, 7.3, 14.3, 15.3)
   );
   drawText(
     ctx,
@@ -1392,7 +1402,7 @@ function drawVideoFrameTemplate3(ctx, t, data, theme) {
     H * 0.62,
     '400 30px "Cormorant Garamond", serif',
     hexToRgba(textC, 0.85),
-    progress(t, 6.6, 7.6)
+    sceneVis(t, 6.6, 7.6, 14.3, 15.3)
   );
   drawGoldText(
     ctx,
@@ -1400,7 +1410,7 @@ function drawVideoFrameTemplate3(ctx, t, data, theme) {
     cx,
     H * 0.645,
     '400 40px "Great Vibes", cursive',
-    progress(t, 7.5, 9.0),
+    sceneVis(t, 7.5, 9.0, 14.3, 15.3),
     40,
     gold,
     gold2,
@@ -1408,27 +1418,27 @@ function drawVideoFrameTemplate3(ctx, t, data, theme) {
   );
 
   /* ═══ SCENE 3 (15–25s): Names card ═══ */
-  drawCardFrame(ctx, W * 0.1, H * 0.7, W * 0.8, H * 0.16, progress(t, 15.0, 16.3), gold, 22);
+  drawCardFrame(ctx, W * 0.1, H * 0.7, W * 0.8, H * 0.16, sceneVis(t, 15.0, 16.3, 24.3, 25.3), gold, 22);
   drawGoldText(
     ctx,
     data.dulhaName || "Dulha Name",
     cx,
     H * 0.745,
     '700 44px "Playfair Display", serif',
-    progress(t, 15.5, 16.5),
+    sceneVis(t, 15.5, 16.5, 24.3, 25.3),
     44,
     gold,
     gold2,
     t
   );
-  drawFlourish(ctx, cx, H * 0.78, 160, progress(t, 16.5, 17.3), gold);
+  drawFlourish(ctx, cx, H * 0.78, 160, sceneVis(t, 16.5, 17.3, 24.3, 25.3), gold);
   drawGoldText(
     ctx,
     data.dulhanName || "Dulhan Name",
     cx,
     H * 0.825,
     '700 44px "Playfair Display", serif',
-    progress(t, 17.0, 18.0),
+    sceneVis(t, 17.0, 18.0, 24.3, 25.3),
     44,
     gold,
     gold2,
@@ -1441,11 +1451,11 @@ function drawVideoFrameTemplate3(ctx, t, data, theme) {
     H * 0.85,
     '600 26px "Cormorant Garamond", serif',
     hexToRgba(gold, 0.85),
-    progress(t, 18.0, 19.0)
+    sceneVis(t, 18.0, 19.0, 24.3, 25.3)
   );
 
   /* ═══ SCENE 4 (25–30s): Details + closing ═══ */
-  drawCardFrame(ctx, W * 0.1, H * 0.38, W * 0.8, H * 0.17, progress(t, 25.0, 26.2), gold, 22);
+  drawCardFrame(ctx, W * 0.1, H * 0.38, W * 0.8, H * 0.17, sceneVis(t, 25.0, 26.2, 29.2, 30), gold, 22);
   const rows4 = [
     [formatDate(data.nikahDate), 25.3, 26.0],
     [formatTime(data.nikahTime), 25.9, 26.6],
@@ -1459,7 +1469,7 @@ function drawVideoFrameTemplate3(ctx, t, data, theme) {
       H * (0.415 + i * 0.048),
       i === 2 ? '400 28px "Cormorant Garamond", serif' : '400 32px "Cormorant Garamond", serif',
       hexToRgba(textC, 0.92),
-      progress(t, s, e)
+      sceneVis(t, s, e, 29.2, 30)
     );
   });
   drawGoldText(
@@ -1468,7 +1478,7 @@ function drawVideoFrameTemplate3(ctx, t, data, theme) {
     cx,
     H * 0.585,
     '400 46px "Great Vibes", cursive',
-    progress(t, 27.4, 28.4),
+    sceneVis(t, 27.4, 28.4, 29.2, 30),
     46,
     gold,
     gold2,
@@ -1481,7 +1491,7 @@ function drawVideoFrameTemplate3(ctx, t, data, theme) {
     H * 0.625,
     '400 22px "Cormorant Garamond", serif',
     hexToRgba(textC, 0.5),
-    progress(t, 28.0, 29.0),
+    sceneVis(t, 28.0, 29.0, 29.2, 30),
     6
   );
 
@@ -1566,7 +1576,7 @@ function drawVideoFrameTemplate4(ctx, t, data, theme) {
 
   /* ═══ SCENE 1 (0–5s): Greeting inside medallion ═══ */
   const [gAr, gEn] = greetingPair(data);
-  drawText(ctx, gAr, cx, H * 0.38, '44px "Amiri", serif', hexToRgba(gold, 0.95), progress(t, 1.5, 3.0), 1);
+  drawText(ctx, gAr, cx, H * 0.38, '44px "Amiri", serif', hexToRgba(gold, 0.95), sceneVis(t, 1.5, 3.0, 4.4, 5.4), 1);
   if (gEn) {
     drawText(
       ctx,
@@ -1575,14 +1585,14 @@ function drawVideoFrameTemplate4(ctx, t, data, theme) {
       H * 0.425,
       '400 24px "Cormorant Garamond", serif',
       hexToRgba(textC, 0.8),
-      progress(t, 2.0, 3.4),
+      sceneVis(t, 2.0, 3.4, 4.4, 5.4),
       2
     );
   }
-  drawFlourish(ctx, cx, H * 0.48, 220, progress(t, 2.8, 3.8), gold);
+  drawFlourish(ctx, cx, H * 0.48, 220, sceneVis(t, 2.8, 3.8, 4.4, 5.4), gold);
 
   /* ═══ SCENE 2 (5–15s): Bismillah + invitation ═══ */
-  drawCardFrame(ctx, W * 0.08, H * 0.55, W * 0.84, H * 0.2, progress(t, 5.5, 6.8), gold, 22);
+  drawCardFrame(ctx, W * 0.08, H * 0.55, W * 0.84, H * 0.2, sceneVis(t, 5.5, 6.8, 14.3, 15.3), gold, 22);
   drawText(
     ctx,
     "بِسْمِ اللَّهِ الرَّحْمَنِ الرَّحِيمِ",
@@ -1590,9 +1600,9 @@ function drawVideoFrameTemplate4(ctx, t, data, theme) {
     H * 0.59,
     '48px "Amiri", serif',
     hexToRgba(gold, 0.9),
-    progress(t, 5.8, 7.0)
+    sceneVis(t, 5.8, 7.0, 14.3, 15.3)
   );
-  drawFlourish(ctx, cx, H * 0.625, 180, progress(t, 6.2, 7.2), gold);
+  drawFlourish(ctx, cx, H * 0.625, 180, sceneVis(t, 6.2, 7.2, 14.3, 15.3), gold);
   drawText(
     ctx,
     "With the blessings of Allah SWT, we joyfully invite you",
@@ -1600,7 +1610,7 @@ function drawVideoFrameTemplate4(ctx, t, data, theme) {
     H * 0.665,
     '400 28px "Cormorant Garamond", serif',
     hexToRgba(textC, 0.85),
-    progress(t, 6.5, 7.5)
+    sceneVis(t, 6.5, 7.5, 14.3, 15.3)
   );
   drawText(
     ctx,
@@ -1609,7 +1619,7 @@ function drawVideoFrameTemplate4(ctx, t, data, theme) {
     H * 0.695,
     '400 28px "Cormorant Garamond", serif',
     hexToRgba(textC, 0.85),
-    progress(t, 6.8, 7.8)
+    sceneVis(t, 6.8, 7.8, 14.3, 15.3)
   );
   drawGoldText(
     ctx,
@@ -1617,7 +1627,7 @@ function drawVideoFrameTemplate4(ctx, t, data, theme) {
     cx,
     H * 0.735,
     '400 40px "Great Vibes", cursive',
-    progress(t, 7.8, 9.2),
+    sceneVis(t, 7.8, 9.2, 14.3, 15.3),
     40,
     gold,
     gold2,
@@ -1625,27 +1635,27 @@ function drawVideoFrameTemplate4(ctx, t, data, theme) {
   );
 
   /* ═══ SCENE 3 (15–25s): Names in medallion ═══ */
-  drawKhatim(ctx, cx, H * 0.4, 130, progress(t, 15.0, 16.3) * 0.55, gold, t * 0.06);
+  drawKhatim(ctx, cx, H * 0.4, 130, sceneVis(t, 15.0, 16.3, 24.3, 25.3) * 0.55, gold, t * 0.06);
   drawGoldText(
     ctx,
     data.dulhaName || "Dulha Name",
     cx,
     H * 0.37,
     '700 46px "Playfair Display", serif',
-    progress(t, 15.5, 16.5),
+    sceneVis(t, 15.5, 16.5, 24.3, 25.3),
     46,
     gold,
     gold2,
     t
   );
-  drawFlourish(ctx, cx, H * 0.41, 150, progress(t, 16.5, 17.3), gold);
+  drawFlourish(ctx, cx, H * 0.41, 150, sceneVis(t, 16.5, 17.3, 24.3, 25.3), gold);
   drawGoldText(
     ctx,
     data.dulhanName || "Dulhan Name",
     cx,
     H * 0.455,
     '700 46px "Playfair Display", serif',
-    progress(t, 17.0, 18.0),
+    sceneVis(t, 17.0, 18.0, 24.3, 25.3),
     46,
     gold,
     gold2,
@@ -1658,11 +1668,11 @@ function drawVideoFrameTemplate4(ctx, t, data, theme) {
     H * 0.495,
     '600 26px "Cormorant Garamond", serif',
     hexToRgba(gold, 0.85),
-    progress(t, 18.0, 19.0)
+    sceneVis(t, 18.0, 19.0, 24.3, 25.3)
   );
 
   /* ═══ SCENE 4 (25–30s): Details + closing ═══ */
-  drawCardFrame(ctx, W * 0.1, H * 0.58, W * 0.8, H * 0.18, progress(t, 25.0, 26.2), gold, 22);
+  drawCardFrame(ctx, W * 0.1, H * 0.58, W * 0.8, H * 0.18, sceneVis(t, 25.0, 26.2, 29.2, 30), gold, 22);
   const rows4 = [
     [formatDate(data.nikahDate), 25.3, 26.0],
     [formatTime(data.nikahTime), 25.9, 26.6],
@@ -1676,7 +1686,7 @@ function drawVideoFrameTemplate4(ctx, t, data, theme) {
       H * (0.615 + i * 0.048),
       i === 2 ? '400 26px "Cormorant Garamond", serif' : '400 30px "Cormorant Garamond", serif',
       hexToRgba(textC, 0.92),
-      progress(t, s, e)
+      sceneVis(t, s, e, 29.2, 30)
     );
   });
   drawGoldText(
@@ -1685,7 +1695,7 @@ function drawVideoFrameTemplate4(ctx, t, data, theme) {
     cx,
     H * 0.8,
     '400 46px "Great Vibes", cursive',
-    progress(t, 27.4, 28.4),
+    sceneVis(t, 27.4, 28.4, 29.2, 30),
     46,
     gold,
     gold2,
@@ -1698,7 +1708,7 @@ function drawVideoFrameTemplate4(ctx, t, data, theme) {
     H * 0.84,
     '400 22px "Cormorant Garamond", serif',
     hexToRgba(textC, 0.5),
-    progress(t, 28.0, 29.0),
+    sceneVis(t, 28.0, 29.0, 29.2, 30),
     6
   );
 
