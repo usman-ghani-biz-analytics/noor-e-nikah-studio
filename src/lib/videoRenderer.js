@@ -7,8 +7,8 @@ import goldCornerUrl from "../images/gold-corner.png";
 
 export const VIDEO_DURATION = 30;
 export const VIDEO_FPS = 15;
-export const VIDEO_W = 640;
-export const VIDEO_H = 1136;
+export const VIDEO_W = 1080;
+export const VIDEO_H = 1920;
 export const TOTAL_FRAMES = VIDEO_DURATION * VIDEO_FPS;
 
 /* ── easing helpers ── */
@@ -2040,7 +2040,7 @@ export async function renderAndDownloadVideo(data, theme, onProgress, { template
 
   const recorder = new MediaRecorder(stream, {
     mimeType,
-    videoBitsPerSecond: 5_000_000,
+    videoBitsPerSecond: 12_000_000,
   });
 
   const chunks = [];
@@ -2104,7 +2104,7 @@ export async function renderAndDownloadVideo(data, theme, onProgress, { template
         try { recorder.requestData(); } catch (_) {}
         try { recorder.stop(); } catch (_) {}
       }
-    }, (duration + 10) * 1000);
+    }, (duration + 20) * 1000);
 
     recorder.start(250);
 

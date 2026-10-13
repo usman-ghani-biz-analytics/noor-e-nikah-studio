@@ -81,7 +81,7 @@ export default function ExportModal({ isOpen, progress, frame, totalFrames = 450
             }}
           >
             <span>{pct}% complete</span>
-            <span>640 × 1136 · {duration}s · WebM</span>
+            <span>1080 × 1920 · {duration}s · WebM</span>
           </div>
 
           <p
