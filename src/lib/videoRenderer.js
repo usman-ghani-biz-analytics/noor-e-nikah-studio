@@ -211,6 +211,53 @@ function drawGoldText(ctx, text, cx, y, font, alphaRaw, size, gold, gold2, t) {
   ctx.restore();
 }
 
+/* Quran ayat / Arabic reveal — each character appears one-by-one, right→left,
+   with a soft gold glow travelling across as it writes itself. */
+function drawArabicReveal(ctx, text, cx, y, font, color, t, start, end, outS, outE, letterSpacing = 2, glowGold = null) {
+  const chars = Array.from(text);
+  const n = chars.length;
+  if (n === 0) return;
+  const perChar = (end - start) / n;
+  const fadeOut = 1 - easeInOutCubic(progress(t, outS, outE));
+  if (fadeOut <= 0) return;
+  ctx.save();
+  ctx.font = font;
+  ctx.textAlign = "left";
+  ctx.textBaseline = "middle";
+  const widths = chars.map((ch) => ctx.measureText(ch).width);
+  const totalW = widths.reduce((a, b) => a + b, 0) + letterSpacing * (n - 1);
+  /* Arabic reads right-to-left: the first character sits on the right */
+  let x = cx + totalW / 2;
+  for (let i = 0; i < n; i++) {
+    const ch = chars[i];
+    const cStart = start + i * perChar;
+    const chIn = easeOutCubic(progress(t, cStart, cStart + perChar * 1.6));
+    const a = chIn * fadeOut;
+    x -= widths[i];
+    if (a > 0.01) {
+      /* travelling glow on the character currently being written */
+      if (glowGold && chIn > 0.02 && chIn < 0.98) {
+        const gx = x + widths[i] / 2;
+        ctx.save();
+        ctx.globalAlpha = a * 0.45;
+        const g = ctx.createRadialGradient(gx, y, 1, gx, y, Math.max(20, widths[i]));
+        g.addColorStop(0, glowGold);
+        g.addColorStop(1, "transparent");
+        ctx.fillStyle = g;
+        ctx.beginPath();
+        ctx.arc(gx, y, Math.max(20, widths[i]), 0, Math.PI * 2);
+        ctx.fill();
+        ctx.restore();
+      }
+      ctx.globalAlpha = a;
+      ctx.fillStyle = color;
+      ctx.fillText(ch, x, y);
+    }
+    x -= letterSpacing;
+  }
+  ctx.restore();
+}
+
 function drawMoonStar(ctx, x, y, size, alphaRaw, gold, rotation) {
   const a = easeOutCubic(alphaRaw);
   if (a <= 0) return;
@@ -671,17 +718,21 @@ export function drawVideoFrame(ctx, t, data, theme, particles) {
   }
 
   /* ═════ SCENE 1 (0–5s): Bismillah + Title ═════ */
-  drawText(
+  drawArabicReveal(
     ctx,
     "بِسْمِ اللَّهِ الرَّحْمَنِ الرَّحِيمِ",
     cx,
     cardTop + 120,
-    '64px "Amiri", serif',
-    hexToRgba(gold, 0.85),
-    progress(t, 1.0, 2.2)
+    '58px "Amiri", serif',
+    hexToRgba(gold, 0.9),
+    t,
+    1.0, 3.2,
+    30, 30,
+    2,
+    gold
   );
-  drawDivider(ctx, cx, cardTop + 180, progress(t, 1.5, 2.5), gold, 500);
-  drawThreeStars(ctx, cx, cardTop + 220, progress(t, 2.0, 3.0), gold);
+  drawDivider(ctx, cx, cardTop + 180, progress(t, 2.6, 3.4), gold, 500);
+  drawThreeStars(ctx, cx, cardTop + 220, progress(t, 2.9, 3.7), gold);
   drawText(
     ctx,
     "THE HOLY BOND OF",
@@ -689,7 +740,7 @@ export function drawVideoFrame(ctx, t, data, theme, particles) {
     cardTop + 280,
     '600 28px "Playfair Display", serif',
     hexToRgba(gold, 0.7),
-    progress(t, 2.5, 3.5),
+    progress(t, 3.1, 3.9),
     14
   );
   drawGoldText(
@@ -698,7 +749,7 @@ export function drawVideoFrame(ctx, t, data, theme, particles) {
     cx,
     cardTop + 360,
     '400 80px "Great Vibes", cursive',
-    progress(t, 3.0, 4.2),
+    progress(t, 3.4, 4.4),
     80,
     gold,
     gold2,
@@ -711,7 +762,7 @@ export function drawVideoFrame(ctx, t, data, theme, particles) {
     cardTop + 420,
     '600 28px "Playfair Display", serif',
     hexToRgba(gold, 0.7),
-    progress(t, 3.5, 4.5),
+    progress(t, 3.7, 4.5),
     14
   );
   drawDivider(ctx, cx, cardTop + 470, progress(t, 4.0, 5.0), gold, 500);
@@ -1046,138 +1097,164 @@ function drawVideoFrameTemplate2(ctx, t, data, theme, assets) {
   ctx.stroke();
   ctx.restore();
 
-  /* couple image in an ornamental framed card — skip if missing */
+  /* couple image framed at TOP — animates in once, then stays */
   if (couple) {
-    const coupleIn = easeOutCubic(progress(t, 4.5, 7));
-    const coupleFull = progress(t, 5, 8);
-    const coupleAlpha = 0.2 + coupleFull * 0.8;
-    const coupleScale = 0.85 + coupleFull * 0.15;
-    /* fit inside a reserved band so it never collides with bottom text */
-    let coupleW = W * 0.78 * coupleScale;
+    const coupleIn = easeOutCubic(progress(t, 0.8, 2.6));
+    const coupleAlpha = 0.15 + easeOutCubic(progress(t, 0.8, 3.0)) * 0.85;
+    let coupleW = W * 0.58;
     let coupleH = (couple.height / couple.width) * coupleW;
-    const maxH = H * 0.4 * coupleScale;
+    const maxH = H * 0.24;
     if (coupleH > maxH) {
       coupleH = maxH;
       coupleW = (couple.width / couple.height) * coupleH;
     }
     const coupleX = (W - coupleW) / 2;
-    const coupleY = H * 0.44 - coupleH / 2 + (1 - coupleIn) * 80;
+    const coupleY = H * 0.115 + (1 - coupleIn) * 40;
 
     ctx.save();
     ctx.globalAlpha = coupleAlpha;
     ctx.beginPath();
-    ctx.roundRect(coupleX, coupleY, coupleW, coupleH, 16);
+    ctx.roundRect(coupleX, coupleY, coupleW, coupleH, 14);
     ctx.clip();
     ctx.drawImage(couple, coupleX, coupleY, coupleW, coupleH);
     ctx.restore();
 
-    /* ornamental double border + corner dots */
+    /* ornamental frame around the couple */
     drawCardFrame(
       ctx,
-      coupleX - 20,
-      coupleY - 20,
-      coupleW + 40,
-      coupleH + 40,
-      progress(t, 4.8, 6.2),
+      coupleX - 16,
+      coupleY - 16,
+      coupleW + 32,
+      coupleH + 32,
+      easeOutCubic(progress(t, 1.0, 2.4)),
       gold,
-      26
+      22
     );
-    /* flourish under the couple card */
-    drawFlourish(
-      ctx,
-      cx,
-      coupleY + coupleH + 52,
-      200,
-      progress(t, 6.5, 7.5),
-      gold
-    );
+    drawFlourish(ctx, cx, coupleY + coupleH + 34, 200, easeOutCubic(progress(t, 2.4, 3.4)), gold);
   } else {
-    /* vector fallback: simple crescent + star */
-    drawMoonStar(ctx, W / 2, H * 0.4, 60, progress(t, 5, 8), gold, -0.3);
+    /* vector fallback: crescent + star */
+    drawMoonStar(ctx, W / 2, H * 0.2, 56, easeOutCubic(progress(t, 0.8, 2.6)), gold, -0.3);
   }
 
-  /* ═══ SCENE 1 (0–5s): Bismillah ═══ */
-  drawText(
+  /* ═══ SINGLE PERSISTENT ORNAMENTAL CARD — every scene's text animates INSIDE it ═══ */
+  const cardX = W * 0.07;
+  const cardY = H * 0.42;
+  const cardW = W * 0.86;
+  const cardH = H * 0.46;
+  drawCardFrame(ctx, cardX, cardY, cardW, cardH, easeOutCubic(progress(t, 1.2, 2.6)), gold, 28);
+
+  /* ═══ SCENE 1 (0.5–5s): Bismillah writes itself, then the title ═══ */
+  drawArabicReveal(
     ctx,
     "بِسْمِ اللَّهِ الرَّحْمَنِ الرَّحِيمِ",
     cx,
-    H * 0.13,
-    '60px "Amiri", serif',
-    hexToRgba(gold, 0.9),
-    sceneVis(t, 1.0, 2.2, 4.4, 5.4)
+    H * 0.52,
+    '50px "Amiri", serif',
+    hexToRgba(gold, 0.95),
+    t,
+    1.3, 3.4,
+    4.4, 5.4,
+    2,
+    gold
   );
-  drawDivider(ctx, cx, H * 0.17, sceneVis(t, 1.5, 2.5, 4.4, 5.4), gold, 600);
-  drawThreeStars(ctx, cx, H * 0.2, sceneVis(t, 2.2, 3.2, 4.4, 5.4), gold);
-  drawFlourish(ctx, cx, H * 0.232, 240, sceneVis(t, 2.6, 3.6, 4.4, 5.4), gold);
+  drawDivider(ctx, cx, H * 0.565, sceneVis(t, 2.6, 3.4, 4.4, 5.4), gold, 440);
+  drawText(
+    ctx,
+    "THE HOLY BOND OF",
+    cx,
+    H * 0.60,
+    '600 26px "Playfair Display", serif',
+    hexToRgba(gold, 0.75),
+    sceneVis(t, 2.9, 3.7, 4.4, 5.4),
+    12
+  );
+  drawGoldText(
+    ctx,
+    "Nikah",
+    cx,
+    H * 0.66,
+    '400 68px "Great Vibes", cursive',
+    sceneVis(t, 3.2, 4.2, 4.4, 5.4),
+    68,
+    gold,
+    gold2,
+    t
+  );
 
-  /* ═══ SCENE 2 (5–15s): Invite + couple names ═══ */
-  /* ornamental invite card */
-  drawCardFrame(ctx, W * 0.08, H * 0.688, W * 0.84, H * 0.155, sceneVis(t, 4.8, 6.0, 14.3, 15.3), gold, 24);
+  /* ═══ SCENE 2 (5–15s): Invitation + couple names ═══ */
   drawText(
     ctx,
-    "With the blessings of Allah SWT, we joyfully invite you",
+    "With the blessings of Allah SWT,",
     cx,
-    H * 0.72,
-    '400 34px "Cormorant Garamond", serif',
+    H * 0.50,
+    '400 30px "Cormorant Garamond", serif',
     hexToRgba(textC, 0.85),
-    sceneVis(t, 5.0, 6.0, 14.3, 15.3)
+    sceneVis(t, 5.2, 6.2, 14.3, 15.3)
   );
   drawText(
     ctx,
-    "to celebrate the wedding of",
+    "we joyfully invite you to celebrate",
     cx,
-    H * 0.755,
-    '400 34px "Cormorant Garamond", serif',
+    H * 0.545,
+    '400 30px "Cormorant Garamond", serif',
     hexToRgba(textC, 0.85),
-    sceneVis(t, 5.3, 6.3, 14.3, 15.3)
+    sceneVis(t, 5.5, 6.5, 14.3, 15.3)
   );
+  drawText(
+    ctx,
+    "the wedding of",
+    cx,
+    H * 0.59,
+    '400 30px "Cormorant Garamond", serif',
+    hexToRgba(textC, 0.85),
+    sceneVis(t, 5.8, 6.8, 14.3, 15.3)
+  );
+  drawDivider(ctx, cx, H * 0.635, sceneVis(t, 6.2, 7.0, 14.3, 15.3), gold, 360);
   drawGoldText(
     ctx,
     `${data.dulhaName || "Groom"} & ${data.dulhanName || "Bride"}`,
     cx,
-    H * 0.81,
-    '400 52px "Great Vibes", cursive',
-    sceneVis(t, 6.5, 8.0, 14.3, 15.3),
-    52,
+    H * 0.71,
+    '400 50px "Great Vibes", cursive',
+    sceneVis(t, 7.0, 8.5, 14.3, 15.3),
+    50,
     gold,
     gold2,
     t
   );
 
   /* ═══ SCENE 3 (15–25s): Names + family ═══ */
-  drawDivider(ctx, cx, H * 0.86, sceneVis(t, 15.0, 15.8, 24.3, 25.3), gold, 500);
-  /* ornamental names card */
-  drawCardFrame(ctx, W * 0.1, H * 0.872, W * 0.8, H * 0.114, sceneVis(t, 15.2, 16.4, 24.3, 25.3), gold, 20);
   drawGoldText(
     ctx,
     data.dulhaName || "Dulha Name",
     cx,
-    H * 0.895,
-    '700 48px "Playfair Display", serif',
-    sceneVis(t, 15.5, 16.5, 24.3, 25.3),
-    48,
+    H * 0.50,
+    '700 46px "Playfair Display", serif',
+    sceneVis(t, 15.3, 16.3, 24.3, 25.3),
+    46,
     gold,
     gold2,
     t
   );
-  const amp2 = sceneVis(t, 16.5, 17.2, 24.3, 25.3);
+  const amp2 = sceneVis(t, 16.2, 16.9, 24.3, 25.3);
   if (amp2 > 0) {
     ctx.save();
     ctx.globalAlpha = easeOutCubic(amp2);
-    ctx.font = '400 44px "Great Vibes", cursive';
+    ctx.font = '400 40px "Great Vibes", cursive';
     ctx.fillStyle = gold;
     ctx.textAlign = "center";
-    ctx.fillText("&", cx, H * 0.92);
+    ctx.textBaseline = "middle";
+    ctx.fillText("&", cx, H * 0.56);
     ctx.restore();
   }
   drawGoldText(
     ctx,
     data.dulhanName || "Dulhan Name",
     cx,
-    H * 0.945,
-    '700 48px "Playfair Display", serif',
-    sceneVis(t, 17.0, 18.0, 24.3, 25.3),
-    48,
+    H * 0.62,
+    '700 46px "Playfair Display", serif',
+    sceneVis(t, 16.8, 17.8, 24.3, 25.3),
+    46,
     gold,
     gold2,
     t
@@ -1186,96 +1263,58 @@ function drawVideoFrameTemplate2(ctx, t, data, theme, assets) {
     ctx,
     `D/O ${data.dulhanFather || "Father's Name"}`,
     cx,
-    H * 0.97,
-    '600 30px "Cormorant Garamond", serif',
-    hexToRgba(gold, 0.9),
-    sceneVis(t, 18.0, 19.0, 24.3, 25.3)
+    H * 0.68,
+    '600 28px "Cormorant Garamond", serif',
+    hexToRgba(gold, 0.85),
+    sceneVis(t, 17.6, 18.6, 24.3, 25.3)
   );
 
   /* ═══ SCENE 4 (25–30s): Details + closing ═══ */
-  /* ornamental details card behind date/time/venue */
-  drawCardFrame(ctx, W * 0.1, H * 0.548, W * 0.8, H * 0.125, sceneVis(t, 25.0, 26.0, 29.2, 30), gold, 20);
-  drawDivider(ctx, cx, H * 0.695, sceneVis(t, 25.0, 25.5, 29.2, 30), gold, 600);
-  /* flourish under closing */
-  drawFlourish(ctx, cx, H * 0.455, 220, sceneVis(t, 28.3, 29.2, 29.2, 30), gold);
-
-  /* date */
-  const d4 = sceneVis(t, 25.3, 26.0, 29.2, 30);
+  const d4 = sceneVis(t, 25.2, 26.0, 29.2, 30);
   if (d4 > 0) {
     ctx.save();
     ctx.globalAlpha = easeOutCubic(d4);
     ctx.font = '400 34px "Cormorant Garamond", serif';
-    ctx.fillStyle = hexToRgba(textC, 0.9);
+    ctx.fillStyle = hexToRgba(textC, 0.92);
     ctx.textAlign = "center";
     ctx.textBaseline = "middle";
-    ctx.fillText(formatDate(data.nikahDate), cx, H * 0.64);
+    ctx.fillText(formatDate(data.nikahDate), cx, H * 0.50);
     ctx.restore();
   }
-  /* time */
-  const t4 = sceneVis(t, 26.0, 26.7, 29.2, 30);
+  const t4 = sceneVis(t, 25.9, 26.6, 29.2, 30);
   if (t4 > 0) {
     ctx.save();
     ctx.globalAlpha = easeOutCubic(t4);
     ctx.font = '400 34px "Cormorant Garamond", serif';
-    ctx.fillStyle = hexToRgba(textC, 0.9);
+    ctx.fillStyle = hexToRgba(textC, 0.92);
     ctx.textAlign = "center";
     ctx.textBaseline = "middle";
-    ctx.fillText(formatTime(data.nikahTime), cx, H * 0.605);
+    ctx.fillText(formatTime(data.nikahTime), cx, H * 0.555);
     ctx.restore();
   }
-  /* venue */
-  const v4 = sceneVis(t, 26.7, 27.4, 29.2, 30);
+  const v4 = sceneVis(t, 26.5, 27.2, 29.2, 30);
   if (v4 > 0) {
     ctx.save();
     ctx.globalAlpha = easeOutCubic(v4);
-    ctx.font = '400 30px "Cormorant Garamond", serif';
-    ctx.fillStyle = hexToRgba(textC, 0.9);
+    ctx.font = '400 28px "Cormorant Garamond", serif';
+    ctx.fillStyle = hexToRgba(textC, 0.92);
     ctx.textAlign = "center";
     ctx.textBaseline = "middle";
-    const venue = data.venue || "Venue TBA";
-    if (ctx.measureText(venue).width > W - 120) {
-      const words = venue.split(" ");
-      let line = "";
-      let ly = H * 0.57;
-      words.forEach((word) => {
-        const test = line ? line + " " + word : word;
-        if (ctx.measureText(test).width > W - 140) {
-          ctx.fillText(line, cx, ly);
-          line = word;
-          ly += 36;
-        } else {
-          line = test;
-        }
-      });
-      ctx.fillText(line, cx, ly);
-    } else {
-      ctx.fillText(venue, cx, H * 0.57);
-    }
+    ctx.fillText(data.venue || "Venue TBA", cx, H * 0.61);
     ctx.restore();
   }
-
-  /* Insha'Allah closing */
+  drawDivider(ctx, cx, H * 0.655, sceneVis(t, 26.8, 27.4, 29.2, 30), gold, 360);
   drawGoldText(
     ctx,
     "Insha'Allah",
     cx,
-    H * 0.53,
-    '400 48px "Great Vibes", cursive',
-    sceneVis(t, 27.5, 28.5, 29.2, 30),
-    48,
+    H * 0.71,
+    '400 46px "Great Vibes", cursive',
+    sceneVis(t, 27.3, 28.3, 29.2, 30),
+    46,
     gold,
     gold2,
     t
-  );
-  drawText(
-    ctx,
-    "WE AWAIT YOUR GRACIOUS PRESENCE",
-    cx,
-    H * 0.49,
-    '400 24px "Cormorant Garamond", serif',
-    hexToRgba(textC, 0.55),
-    sceneVis(t, 28.0, 29.0, 29.2, 30),
-    6
   );
 
   /* finale glow */
@@ -1359,7 +1398,7 @@ function drawVideoFrameTemplate3(ctx, t, data, theme) {
   const g1 = s1v;
   if (g1 > 0) {
     drawCardFrame(ctx, W * 0.07, H * 0.3, W * 0.86, H * 0.14, g1, gold, 22);
-    drawText(ctx, gAr, cx, H * 0.345, '52px "Amiri", serif', hexToRgba(gold, 0.95), g1, 1);
+    drawArabicReveal(ctx, gAr, cx, H * 0.345, '48px "Amiri", serif', hexToRgba(gold, 0.95), t, 1.3, 3.2, 4.4, 5.4, 2, gold);
     if (gEn) {
       drawText(
         ctx,
@@ -1368,22 +1407,26 @@ function drawVideoFrameTemplate3(ctx, t, data, theme) {
         H * 0.395,
         '400 26px "Cormorant Garamond", serif',
         hexToRgba(textC, 0.8),
-        sceneVis(t, 1.8, 3.0, 4.4, 5.4),
+        sceneVis(t, 2.2, 3.2, 4.4, 5.4),
         2
       );
     }
   }
-  drawFlourish(ctx, cx, H * 0.465, 260, sceneVis(t, 2.6, 3.6, 4.4, 5.4), gold);
+  drawFlourish(ctx, cx, H * 0.465, 260, sceneVis(t, 2.9, 3.7, 4.4, 5.4), gold);
 
   /* ═══ SCENE 2 (5–15s): Bismillah + invitation ═══ */
-  drawText(
+  drawArabicReveal(
     ctx,
     "بِسْمِ اللَّهِ الرَّحْمَنِ الرَّحِيمِ",
     cx,
     H * 0.52,
-    '56px "Amiri", serif',
-    hexToRgba(gold, 0.9),
-    sceneVis(t, 5.5, 6.8, 14.3, 15.3)
+    '50px "Amiri", serif',
+    hexToRgba(gold, 0.92),
+    t,
+    5.5, 7.6,
+    14.3, 15.3,
+    2,
+    gold
   );
   drawCardFrame(ctx, W * 0.08, H * 0.56, W * 0.84, H * 0.1, sceneVis(t, 6.0, 7.2, 14.3, 15.3), gold, 20);
   drawText(
@@ -1576,7 +1619,7 @@ function drawVideoFrameTemplate4(ctx, t, data, theme) {
 
   /* ═══ SCENE 1 (0–5s): Greeting inside medallion ═══ */
   const [gAr, gEn] = greetingPair(data);
-  drawText(ctx, gAr, cx, H * 0.38, '44px "Amiri", serif', hexToRgba(gold, 0.95), sceneVis(t, 1.5, 3.0, 4.4, 5.4), 1);
+  drawArabicReveal(ctx, gAr, cx, H * 0.38, '42px "Amiri", serif', hexToRgba(gold, 0.95), t, 1.5, 3.4, 4.4, 5.4, 2, gold);
   if (gEn) {
     drawText(
       ctx,
@@ -1585,24 +1628,28 @@ function drawVideoFrameTemplate4(ctx, t, data, theme) {
       H * 0.425,
       '400 24px "Cormorant Garamond", serif',
       hexToRgba(textC, 0.8),
-      sceneVis(t, 2.0, 3.4, 4.4, 5.4),
+      sceneVis(t, 2.4, 3.4, 4.4, 5.4),
       2
     );
   }
-  drawFlourish(ctx, cx, H * 0.48, 220, sceneVis(t, 2.8, 3.8, 4.4, 5.4), gold);
+  drawFlourish(ctx, cx, H * 0.48, 220, sceneVis(t, 3.0, 3.8, 4.4, 5.4), gold);
 
   /* ═══ SCENE 2 (5–15s): Bismillah + invitation ═══ */
   drawCardFrame(ctx, W * 0.08, H * 0.55, W * 0.84, H * 0.2, sceneVis(t, 5.5, 6.8, 14.3, 15.3), gold, 22);
-  drawText(
+  drawArabicReveal(
     ctx,
     "بِسْمِ اللَّهِ الرَّحْمَنِ الرَّحِيمِ",
     cx,
     H * 0.59,
-    '48px "Amiri", serif',
-    hexToRgba(gold, 0.9),
-    sceneVis(t, 5.8, 7.0, 14.3, 15.3)
+    '46px "Amiri", serif',
+    hexToRgba(gold, 0.92),
+    t,
+    5.8, 7.8,
+    14.3, 15.3,
+    2,
+    gold
   );
-  drawFlourish(ctx, cx, H * 0.625, 180, sceneVis(t, 6.2, 7.2, 14.3, 15.3), gold);
+  drawFlourish(ctx, cx, H * 0.625, 180, sceneVis(t, 7.2, 8.0, 14.3, 15.3), gold);
   drawText(
     ctx,
     "With the blessings of Allah SWT, we joyfully invite you",
@@ -1791,7 +1838,7 @@ function drawVideoFrameTemplate5(ctx, t, data, theme) {
   /* ═══ SCENE 1 (0–5s): Greeting ═══ */
   const [gAr, gEn] = greetingPair(data);
   drawCardFrame(ctx, W * 0.07, H * 0.47, W * 0.86, H * 0.13, sceneVis(t, 1.5, 2.8, 4.4, 5.4), gold, 22);
-  drawText(ctx, gAr, cx, H * 0.51, '46px "Amiri", serif', hexToRgba(gold, 0.95), sceneVis(t, 1.8, 3.2, 4.4, 5.4), 1);
+  drawArabicReveal(ctx, gAr, cx, H * 0.51, '44px "Amiri", serif', hexToRgba(gold, 0.95), t, 1.6, 3.4, 4.4, 5.4, 2, gold);
   if (gEn) {
     drawText(
       ctx,
@@ -1800,21 +1847,25 @@ function drawVideoFrameTemplate5(ctx, t, data, theme) {
       H * 0.56,
       '400 24px "Cormorant Garamond", serif',
       hexToRgba(textC, 0.8),
-      sceneVis(t, 2.3, 3.6, 4.4, 5.4),
+      sceneVis(t, 2.6, 3.6, 4.4, 5.4),
       2
     );
   }
-  drawFlourish(ctx, cx, H * 0.62, 240, sceneVis(t, 3.0, 4.0, 4.4, 5.4), gold);
+  drawFlourish(ctx, cx, H * 0.62, 240, sceneVis(t, 3.2, 4.0, 4.4, 5.4), gold);
 
   /* ═══ SCENE 2 (5–15s): Bismillah + invitation ═══ */
-  drawText(
+  drawArabicReveal(
     ctx,
     "بِسْمِ اللَّهِ الرَّحْمَنِ الرَّحِيمِ",
     cx,
     H * 0.66,
-    '52px "Amiri", serif',
-    hexToRgba(gold, 0.9),
-    sceneVis(t, 5.5, 6.8, 14.3, 15.3)
+    '50px "Amiri", serif',
+    hexToRgba(gold, 0.92),
+    t,
+    5.5, 7.6,
+    14.3, 15.3,
+    2,
+    gold
   );
   drawCardFrame(ctx, W * 0.08, H * 0.7, W * 0.84, H * 0.1, sceneVis(t, 6.0, 7.2, 14.3, 15.3), gold, 20);
   drawText(
