@@ -21,7 +21,7 @@ import GoldDivider from "./GoldDivider";
 import InputField from "./InputField";
 import ThemeSelector from "./ThemeSelector";
 import ExportModal from "./ExportModal";
-import { themes, defaultFormData } from "../lib/themes";
+import { themes, defaultFormData, DURATION_OPTIONS } from "../lib/themes";
 import { renderAndDownloadVideo } from "../lib/videoRenderer";
 
 export default function EditorShell({ templateId, renderPreview }) {
@@ -167,6 +167,42 @@ export default function EditorShell({ templateId, renderPreview }) {
                 <InputField label="Nikah Time" icon={Clock} value={formData.nikahTime} onChange={(v) => handleChange("nikahTime", v)} type="time" theme={theme} />
               </div>
               <InputField label="Venue" icon={MapPin} value={formData.venue} onChange={(v) => handleChange("venue", v)} placeholder="Enter venue location" theme={theme} />
+
+              {/* VIDEO DURATION PICKER */}
+              <div>
+                <label className="block mb-2" style={{ fontFamily: "'Cormorant Garamond', serif", color: theme.goldPrimary, fontSize: "0.95rem", fontWeight: 600, letterSpacing: "0.04em" }}>
+                  <span className="inline-flex items-center gap-2">
+                    <Film size={14} /> Video Duration
+                  </span>
+                </label>
+                <div className="flex flex-wrap gap-2">
+                  {DURATION_OPTIONS.map((d) => {
+                    const active = formData.videoDuration === d;
+                    return (
+                      <button
+                        key={d}
+                        type="button"
+                        onClick={() => handleChange("videoDuration", d)}
+                        className="px-4 py-2 rounded-xl transition-all duration-200"
+                        style={{
+                          background: active ? `linear-gradient(135deg, ${theme.goldSecondary}, ${theme.goldPrimary})` : `${theme.goldPrimary}10`,
+                          border: `1.5px solid ${active ? theme.goldPrimary : `${theme.goldPrimary}35`}`,
+                          color: active ? "#1a0a02" : theme.goldPrimary,
+                          fontFamily: "'Playfair Display', serif",
+                          fontSize: "0.9rem",
+                          fontWeight: active ? 700 : 500,
+                          cursor: "pointer",
+                        }}
+                      >
+                        {d}s
+                      </button>
+                    );
+                  })}
+                </div>
+                <p className="mt-1.5" style={{ fontFamily: "'Cormorant Garamond', serif", color: theme.textColor, opacity: 0.45, fontSize: "0.78rem" }}>
+                  Video ends exactly at {formData.videoDuration} seconds
+                </p>
+              </div>
             </div>
 
             <GoldDivider theme={theme} />
@@ -194,7 +230,7 @@ export default function EditorShell({ templateId, renderPreview }) {
                   }}
                 >
                   <Play size={16} fill={theme.goldPrimary} />
-                  {isPreviewPlaying ? "Pause Preview" : "Play 30s Preview"}
+                  {isPreviewPlaying ? "Pause Preview" : `Play ${formData.videoDuration}s Preview`}
                 </button>
                 <button
                   onClick={handlePreviewRestart}
@@ -258,7 +294,7 @@ export default function EditorShell({ templateId, renderPreview }) {
                 ) : (
                   <>
                     <Film size={20} />
-                    <span>Convert &amp; Download 30s Video</span>
+                    <span>Convert &amp; Download {formData.videoDuration}s Video</span>
                     <Sparkles size={16} />
                   </>
                 )}
@@ -280,7 +316,7 @@ export default function EditorShell({ templateId, renderPreview }) {
                 }}
               >
                 <Download size={16} />
-                Download HD (1080×1920 WebM)
+                Download HD ({formData.videoDuration}s WebM)
               </button>
 
               {isExported && (
@@ -288,7 +324,7 @@ export default function EditorShell({ templateId, renderPreview }) {
                   <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full" style={{ background: "rgba(74, 222, 128, 0.1)", border: "1px solid rgba(74, 222, 128, 0.25)" }}>
                     <CheckCircle2 size={14} style={{ color: "#4ADE80" }} />
                     <span style={{ fontFamily: "'Cormorant Garamond', serif", color: "#4ADE80", fontSize: "0.85rem" }}>
-                      30s video downloaded — share on WhatsApp / Instagram!
+                      {formData.videoDuration}s video downloaded — share on WhatsApp / Instagram!
                     </span>
                   </div>
                 </div>
@@ -319,7 +355,7 @@ export default function EditorShell({ templateId, renderPreview }) {
             <div className="flex items-center gap-2 mb-4">
               <div className="w-1.5 h-1.5 rounded-full" style={{ background: "#4ADE80", boxShadow: "0 0 8px rgba(74,222,128,0.5)" }} />
               <span className="uppercase" style={{ fontFamily: "'Playfair Display', serif", color: theme.goldPrimary, opacity: 0.6, fontSize: "0.65rem", letterSpacing: "0.22em" }}>
-                {isPreviewPlaying ? "Playing 30s Animation" : "Live Preview"}
+                {isPreviewPlaying ? `Playing ${formData.videoDuration}s Animation` : "Live Preview"}
               </span>
               <div className="w-1.5 h-1.5 rounded-full animate-pulse" style={{ background: theme.goldPrimary, opacity: 0.5 }} />
             </div>
@@ -358,7 +394,7 @@ export default function EditorShell({ templateId, renderPreview }) {
         </footer>
       </div>
 
-      <ExportModal isOpen={isProcessing} progress={exportState.progress} frame={exportState.frame} theme={theme} />
+      <ExportModal isOpen={isProcessing} progress={exportState.progress} frame={exportState.frame} totalFrames={formData.videoDuration * 15} duration={formData.videoDuration} theme={theme} />
     </div>
   );
 }

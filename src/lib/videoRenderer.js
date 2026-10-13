@@ -1958,6 +1958,11 @@ export function renderPreviewFrame(canvas, t, data, theme, templateId, assets) {
 export async function renderAndDownloadVideo(data, theme, onProgress, { templateId = 1, themeName = "Royal Red & Gold" } = {}) {
   await loadCanvasFonts();
 
+  /* user-selected duration: animation is authored on a 30s timeline, then time-scaled */
+  const duration = Math.max(10, Math.min(120, Number(data?.videoDuration) || 30));
+  const timeScale = VIDEO_DURATION / duration; /* maps wall-clock → 0..30s timeline */
+  const totalFrames = Math.round(duration * VIDEO_FPS);
+
   let assets = null;
   if (templateId === 2) {
     assets = await loadTemplate2Assets(themeName);
@@ -1966,6 +1971,16 @@ export async function renderAndDownloadVideo(data, theme, onProgress, { template
   const canvas = document.createElement("canvas");
   canvas.width = VIDEO_W;
   canvas.height = VIDEO_H;
+  /* MUST be in the DOM for Chrome to capture more than the first frame.
+     Off-screen + invisible, but rendered. */
+  canvas.style.cssText =
+    "position:fixed;top:0;left:0;width:2px;height:2px;opacity:0.01;pointer-events:none;z-index:-1;";
+  document.body.appendChild(canvas);
+  const cleanupCanvas = () => {
+    try {
+      canvas.remove();
+    } catch (_) {}
+  };
   const ctx = canvas.getContext("2d", { alpha: false });
 
   const scaleX = VIDEO_W / DESIGN_W;
@@ -1999,6 +2014,7 @@ export async function renderAndDownloadVideo(data, theme, onProgress, { template
     drawFrame(0);
   } catch (err) {
     console.error("Frame draw probe failed:", err);
+    cleanupCanvas();
     throw new Error("Canvas draw failed: " + (err?.message || err));
   }
 
@@ -2035,10 +2051,10 @@ export async function renderAndDownloadVideo(data, theme, onProgress, { template
   return new Promise((resolve, reject) => {
     let finished = false;
     let frameIndex = 0;
-
     const finish = () => {
       if (finished) return;
       finished = true;
+      cleanupCanvas();
       try {
         if (chunks.length === 0) {
           reject(new Error("No video data was captured. Try Chrome/Edge."));
@@ -2067,17 +2083,18 @@ export async function renderAndDownloadVideo(data, theme, onProgress, { template
     recorder.onerror = (e) => {
       if (!finished) {
         finished = true;
+        cleanupCanvas();
         reject(e.error || new Error("MediaRecorder error"));
       }
     };
 
-    /* safety timeout */
+    /* safety timeout — based on real wall-clock duration */
     const safetyTimer = setTimeout(() => {
       if (!finished && recorder.state !== "inactive") {
         try { recorder.requestData(); } catch (_) {}
         try { recorder.stop(); } catch (_) {}
       }
-    }, (VIDEO_DURATION + 10) * 1000);
+    }, (duration + 10) * 1000);
 
     recorder.start(250);
 
@@ -2087,8 +2104,8 @@ export async function renderAndDownloadVideo(data, theme, onProgress, { template
     const tick = () => {
       if (finished) return;
       try {
-        /* virtual time based on frame index — guarantees correct animation timeline */
-        const virtualTime = frameIndex / VIDEO_FPS;
+        /* virtual time scaled onto the 30s authoring timeline */
+        const virtualTime = (frameIndex / VIDEO_FPS) * timeScale;
         drawFrame(virtualTime);
 
         /* tell the track a new frame is ready — this is what MediaRecorder captures */
@@ -2098,11 +2115,11 @@ export async function renderAndDownloadVideo(data, theme, onProgress, { template
 
         frameIndex++;
         onProgress?.({
-          progress: frameIndex / TOTAL_FRAMES,
+          progress: frameIndex / totalFrames,
           frame: frameIndex,
         });
 
-        if (frameIndex >= TOTAL_FRAMES) {
+        if (frameIndex >= totalFrames) {
           clearTimeout(safetyTimer);
           try { recorder.requestData(); } catch (_) {}
           try { recorder.stop(); } catch (_) { finish(); }
@@ -2119,6 +2136,7 @@ export async function renderAndDownloadVideo(data, theme, onProgress, { template
         if (frameErrors > 50) {
           clearTimeout(safetyTimer);
           finished = true;
+          cleanupCanvas();
           reject(new Error("Repeated draw errors: " + (err?.message || err)));
           return;
         }

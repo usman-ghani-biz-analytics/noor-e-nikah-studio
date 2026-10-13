@@ -17,7 +17,9 @@ export default function CanvasPreview({ data, theme, themeName, templateId, isPl
   const canvasRef = useRef(null);
   const assetsRef = useRef(null);
   const fontsLoadedRef = useRef(false);
-  const elapsed = useTimeline(isPlaying, onEnded, 30);
+  const duration = Math.max(10, Math.min(120, Number(data?.videoDuration) || 30));
+  const timeScale = 30 / duration;
+  const elapsed = useTimeline(isPlaying, onEnded, duration);
   const [ready, setReady] = useState(false);
 
   useEffect(() => {
@@ -41,13 +43,14 @@ export default function CanvasPreview({ data, theme, themeName, templateId, isPl
     const canvas = canvasRef.current;
     if (!canvas) return;
     try {
-      renderPreviewFrame(canvas, elapsed, data, theme, templateId, assetsRef.current);
+      renderPreviewFrame(canvas, elapsed * timeScale, data, theme, templateId, assetsRef.current);
     } catch (err) {
       console.error("Preview draw error:", err);
     }
-  }, [elapsed, data, theme, templateId, ready]);
+  }, [elapsed, data, theme, templateId, ready, timeScale]);
 
-  const scene = elapsed < 5 ? 1 : elapsed < 15 ? 2 : elapsed < 25 ? 3 : 4;
+  const t = elapsed * timeScale; /* position on the 30s authoring timeline */
+  const scene = t < 5 ? 1 : t < 15 ? 2 : t < 25 ? 3 : 4;
   const sceneLabels = ["Opening", "Invitation", "Names", "Details & Closing"];
 
   return (
@@ -68,10 +71,10 @@ export default function CanvasPreview({ data, theme, themeName, templateId, isPl
       <div className="absolute bottom-2 left-4 right-4 z-20">
         <div className="flex justify-between mb-1" style={{ fontFamily: "'Cormorant Garamond', serif", fontSize: "0.6rem", color: "#FFD700", opacity: 0.7, textShadow: "0 1px 4px rgba(0,0,0,0.8)" }}>
           <span>{sceneLabels[scene - 1]}</span>
-          <span>{Math.floor(elapsed)}s / 30s</span>
+          <span>{Math.floor(elapsed)}s / {duration}s</span>
         </div>
         <div className="h-1 rounded-full overflow-hidden" style={{ background: "rgba(0,0,0,0.5)" }}>
-          <div className="h-full rounded-full transition-all duration-100" style={{ width: `${(elapsed / 30) * 100}%`, background: `linear-gradient(90deg, ${theme.goldSecondary}, ${theme.goldPrimary})` }} />
+          <div className="h-full rounded-full transition-all duration-100" style={{ width: `${(elapsed / duration) * 100}%`, background: `linear-gradient(90deg, ${theme.goldSecondary}, ${theme.goldPrimary})` }} />
         </div>
       </div>
     </div>

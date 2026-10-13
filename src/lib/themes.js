@@ -57,6 +57,7 @@ export const themes = {
 
 export const defaultFormData = {
   customGreeting: "",
+  videoDuration: 30,
   dulhaName: "Muhammad Ali",
   dulhanName: "Ayesha Fatima",
   dulhanFather: "Ahmed Khan",
@@ -64,6 +65,8 @@ export const defaultFormData = {
   nikahTime: "18:30",
   venue: "Grand Masjid-e-Noor, Gulberg, Lahore",
 };
+
+export const DURATION_OPTIONS = [15, 20, 25, 30, 45, 60];
 
 export function formatDate(d) {
   if (!d) return "Date TBA";

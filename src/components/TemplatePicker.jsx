@@ -207,7 +207,7 @@ export default function TemplatePicker({ onSelect, onBack }) {
             Choose Your Template
           </h1>
           <p className="mt-2 uppercase" style={{ fontFamily: "'Cormorant Garamond', serif", color: "#FFD700", opacity: 0.6, fontSize: "0.8rem", letterSpacing: "0.25em" }}>
-            Five cinematic designs · 30s HD video export
+            Five cinematic designs · 15–60s HD video export
           </p>
           <div className="flex items-center justify-center gap-3 mt-4">
             <div className="h-px w-20" style={{ background: "linear-gradient(90deg, transparent, #FFD70066)" }} />

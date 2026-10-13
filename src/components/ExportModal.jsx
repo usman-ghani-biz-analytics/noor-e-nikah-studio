@@ -1,7 +1,6 @@
 import { Loader2, X } from "lucide-react";
-import { TOTAL_FRAMES } from "../lib/videoRenderer";
 
-export default function ExportModal({ isOpen, progress, frame, theme, onCancel }) {
+export default function ExportModal({ isOpen, progress, frame, totalFrames = 450, duration = 30, theme, onCancel }) {
   if (!isOpen) return null;
   const pct = Math.round(progress * 100);
 
@@ -54,7 +53,7 @@ export default function ExportModal({ isOpen, progress, frame, theme, onCancel }
               fontSize: "0.95rem",
             }}
           >
-            Rendering frame {frame.toLocaleString()} / {TOTAL_FRAMES.toLocaleString()}… Please wait
+            Rendering frame {frame.toLocaleString()} / {totalFrames.toLocaleString()}… Please wait
           </p>
 
           {/* progress bar */}
@@ -82,7 +81,7 @@ export default function ExportModal({ isOpen, progress, frame, theme, onCancel }
             }}
           >
             <span>{pct}% complete</span>
-            <span>1080 × 1920 · 30s · WebM</span>
+            <span>640 × 1136 · {duration}s · WebM</span>
           </div>
 
           <p
