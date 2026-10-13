@@ -1,0 +1,435 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  margin: 0;
+  padding: 0;
+  font-family: "Cormorant Garamond", Georgia, serif;
+  overflow-x: hidden;
+  background: #1a0305;
+  -webkit-font-smoothing: antialiased;
+}
+
+#root {
+  min-height: 100dvh;
+}
+
+/* ── FLOATING GOLD DUST ── */
+@keyframes floatUp {
+  0% {
+    transform: translateY(105vh) translateX(0) scale(0);
+    opacity: 0;
+  }
+  8% {
+    opacity: var(--p-opacity);
+    transform: translateY(90vh) translateX(8px) scale(1);
+  }
+  50% {
+    transform: translateY(45vh) translateX(-12px) scale(1.1);
+  }
+  92% {
+    opacity: var(--p-opacity);
+  }
+  100% {
+    transform: translateY(-8vh) translateX(6px) scale(0);
+    opacity: 0;
+  }
+}
+
+.particle {
+  position: absolute;
+  border-radius: 50%;
+  background: radial-gradient(circle at 30% 30%, #fff9c4, #ffd700, #b8860b);
+  animation: floatUp linear infinite;
+  will-change: transform, opacity;
+  pointer-events: none;
+}
+
+/* ── GOLD TEXT SHIMMER ── */
+@keyframes goldShimmer {
+  0% {
+    background-position: -200% center;
+  }
+  100% {
+    background-position: 200% center;
+  }
+}
+
+.gold-text {
+  background: linear-gradient(
+    90deg,
+    #b8860b 0%,
+    #ffd700 20%,
+    #fff8dc 40%,
+    #ffd700 60%,
+    #b8860b 80%,
+    #ffd700 100%
+  );
+  background-size: 250% auto;
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  animation: goldShimmer 5s ease-in-out infinite;
+}
+
+/* ── GLOW PULSE ── */
+@keyframes glowPulse {
+  0%,
+  100% {
+    box-shadow: 0 0 15px var(--glow, rgba(255, 215, 0, 0.25)),
+      0 0 35px var(--glow, rgba(255, 215, 0, 0.1));
+  }
+  50% {
+    box-shadow: 0 0 25px var(--glow, rgba(255, 215, 0, 0.45)),
+      0 0 55px var(--glow, rgba(255, 215, 0, 0.18));
+  }
+}
+
+.glow-pulse {
+  animation: glowPulse 2.5s ease-in-out infinite;
+}
+
+/* ── SPARKLE DOTS ── */
+@keyframes sparkleRotate {
+  0% {
+    opacity: 0;
+    transform: scale(0) rotate(0deg);
+  }
+  25% {
+    opacity: 1;
+    transform: scale(1.1) rotate(90deg);
+  }
+  50% {
+    opacity: 0.6;
+    transform: scale(0.8) rotate(180deg);
+  }
+  75% {
+    opacity: 1;
+    transform: scale(1) rotate(270deg);
+  }
+  100% {
+    opacity: 0;
+    transform: scale(0) rotate(360deg);
+  }
+}
+
+.sparkle-dot {
+  position: absolute;
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: #fff;
+  pointer-events: none;
+  animation: sparkleRotate 1.8s ease-in-out infinite;
+}
+
+/* ── ARCH SHAPE ── */
+.arch-shape {
+  border-radius: 50% 50% 14px 14px / 22% 22% 14px 14px;
+}
+.arch-inner {
+  border-radius: 48% 48% 12px 12px / 20% 20% 12px 12px;
+}
+
+/* ── INPUT ── */
+.luxury-input {
+  transition: all 0.35s cubic-bezier(0.4, 0, 0.2, 1);
+  font-family: "Cormorant Garamond", serif;
+}
+.luxury-input:focus {
+  outline: none;
+  box-shadow: 0 0 0 2px rgba(255, 215, 0, 0.35),
+    0 4px 20px rgba(255, 215, 0, 0.12);
+}
+.luxury-input::placeholder {
+  color: rgba(255, 248, 220, 0.3);
+  font-style: italic;
+}
+
+/* date/time input icon color */
+.luxury-input::-webkit-calendar-picker-indicator {
+  filter: invert(1) sepia(1) saturate(5) hue-rotate(10deg);
+  cursor: pointer;
+  opacity: 0.7;
+}
+
+/* ── SCROLLBAR ── */
+::-webkit-scrollbar {
+  width: 5px;
+}
+::-webkit-scrollbar-track {
+  background: rgba(0, 0, 0, 0.2);
+  border-radius: 10px;
+}
+::-webkit-scrollbar-thumb {
+  background: linear-gradient(180deg, #b8860b, #ffd700);
+  border-radius: 10px;
+}
+
+/* ── CARD FLOAT ── */
+@keyframes cardFloat {
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-8px);
+  }
+}
+.card-float {
+  animation: cardFloat 6s ease-in-out infinite;
+}
+
+/* ── GEOMETRIC PATTERN ── */
+.geo-pattern {
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='80' height='80' viewBox='0 0 80 80'%3E%3Cg fill='none' stroke='%23FFD700' stroke-width='0.4' opacity='0.35'%3E%3Cpath d='M40 0 L80 40 L40 80 L0 40 Z'/%3E%3Cpath d='M20 20 L60 20 L60 60 L20 60 Z'/%3E%3Ccircle cx='40' cy='40' r='18'/%3E%3Cpath d='M40 22 L58 40 L40 58 L22 40 Z'/%3E%3C/g%3E%3C/svg%3E");
+  background-size: 80px 80px;
+}
+
+/* ── FADE IN ── */
+@keyframes fadeInUp {
+  0% {
+    opacity: 0;
+    transform: translateY(24px);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+.fade-in-up {
+  animation: fadeInUp 0.8s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+}
+
+/* ═════════ 30s TIMELINE SCENE KEYFRAMES (right preview) ═════════ */
+
+/* Scene 1: Bismillah glow-in (0–5s) */
+@keyframes sceneBismillah {
+  0% {
+    opacity: 0;
+    transform: scale(0.8);
+    filter: blur(8px);
+  }
+  6% {
+    opacity: 1;
+    transform: scale(1);
+    filter: blur(0);
+  }
+  85% {
+    opacity: 1;
+    transform: scale(1);
+    filter: blur(0);
+  }
+  100% {
+    opacity: 0;
+    transform: scale(1.05);
+    filter: blur(4px);
+  }
+}
+.anim-bismillah {
+  animation: sceneBismillah 5s ease-out forwards;
+}
+
+/* Arch wipe (0–5s) */
+@keyframes archWipe {
+  0% {
+    clip-path: inset(50% 0 50% 0);
+    opacity: 0;
+  }
+  20% {
+    clip-path: inset(20% 0 20% 0);
+    opacity: 1;
+  }
+  40% {
+    clip-path: inset(0 0 0 0);
+    opacity: 1;
+  }
+  85% {
+    opacity: 1;
+    clip-path: inset(0 0 0 0);
+  }
+  100% {
+    opacity: 0;
+    clip-path: inset(0 0 0 0);
+  }
+}
+.anim-arch-wipe {
+  animation: archWipe 5s ease-out forwards;
+}
+
+/* Scene 2: Invite text slide (5–15s) */
+@keyframes sceneInvite {
+  0% {
+    opacity: 0;
+    transform: translateY(40px);
+    letter-spacing: 0.3em;
+  }
+  12% {
+    opacity: 1;
+    transform: translateY(0);
+    letter-spacing: 0.05em;
+  }
+  85% {
+    opacity: 1;
+    transform: translateY(0);
+  }
+  100% {
+    opacity: 0;
+    transform: translateY(-20px);
+  }
+}
+.anim-invite {
+  animation: sceneInvite 10s ease-out forwards;
+  animation-delay: 5s;
+}
+
+/* Scene 3: Names reveal (15–25s) */
+@keyframes sceneNames {
+  0% {
+    opacity: 0;
+    transform: translateY(50px) scale(0.92);
+  }
+  12% {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+  85% {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+  100% {
+    opacity: 0;
+    transform: translateY(-15px) scale(1.02);
+  }
+}
+.anim-names {
+  animation: sceneNames 10s ease-out forwards;
+  animation-delay: 15s;
+}
+
+/* Scene 4: Details scale-up (25–30s) */
+@keyframes sceneDetails {
+  0% {
+    opacity: 0;
+    transform: scale(0.7);
+  }
+  18% {
+    opacity: 1;
+    transform: scale(1.04);
+  }
+  30% {
+    transform: scale(1);
+  }
+  92% {
+    opacity: 1;
+    transform: scale(1);
+  }
+  100% {
+    opacity: 0.3;
+    transform: scale(1.01);
+  }
+}
+.anim-details {
+  animation: sceneDetails 5s ease-out forwards;
+  animation-delay: 25s;
+}
+
+/* Gold border flourish at close */
+@keyframes borderFlourish {
+  0% {
+    opacity: 0;
+    transform: scaleX(0);
+  }
+  30% {
+    opacity: 1;
+    transform: scaleX(1);
+  }
+  100% {
+    opacity: 1;
+    transform: scaleX(1);
+  }
+}
+.anim-flourish {
+  animation: borderFlourish 3s ease-out forwards;
+  animation-delay: 26s;
+}
+
+/* Sheen sweep for gold text */
+@keyframes sheenSweep {
+  0% {
+    background-position: -200% center;
+  }
+  100% {
+    background-position: 200% center;
+  }
+}
+
+/* Timeline scene controller: use animation-play-state */
+.timeline-scene {
+  opacity: 0;
+  pointer-events: none;
+}
+.timeline-scene.is-playing {
+  opacity: 1;
+  pointer-events: auto;
+}
+.timeline-scene.is-paused * {
+  animation-play-state: paused !important;
+}
+
+/* Progress bar animation */
+@keyframes progressPulse {
+  0%,
+  100% {
+    box-shadow: 0 0 8px rgba(255, 215, 0, 0.5);
+  }
+  50% {
+    box-shadow: 0 0 18px rgba(255, 215, 0, 0.9);
+  }
+}
+.progress-active {
+  animation: progressPulse 1s ease-in-out infinite;
+}
+
+/* Modal backdrop */
+@keyframes modalIn {
+  from {
+    opacity: 0;
+    transform: scale(0.92) translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+  }
+}
+.modal-in {
+  animation: modalIn 0.35s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+.animate-spin {
+  animation: spin 1s linear infinite;
+}
+
+@keyframes pulse {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.4;
+  }
+}
+.animate-pulse {
+  animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+}
